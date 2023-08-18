@@ -11,7 +11,7 @@ blogsRouter.post('/', (request, response) =>{
     const body = request.body
     const blog = new Blog(body)
     blog.save().then(savedBlog =>{
-        response.json(savedBlog)
+        response.status(201).json(savedBlog)
     }).catch(error =>{
         next(error)
     })
