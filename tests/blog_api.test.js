@@ -19,12 +19,10 @@ const initialBlogs = [
         likes: 5
     },
     {
-      _id: "5a422aa71b54a676234d17f8",
       title: "Go To Statement Considered Harmful",
-      author: "Edsger W. Dijkstra",
+      author: "Edsger",
       url: "http://www.u.arizona.edu/~rubinson/copyright_violations/Go_To_Considered_Harmful.html",
-      likes: 5,
-      __v: 0
+      likes: 6
     }
 ]
 
@@ -54,12 +52,10 @@ test('unique identifier propery', async () =>{
 
 test('valid post', async () =>{
     const blogObject = {
-        _id: "5a422ba71b54a676234d17fb",
         title: "TDD harms architecture",
         author: "Robert C. Martin",
         url: "http://blog.cleancoder.com/uncle-bob/2017/03/03/TDD-Harms-Architecture.html",
-        likes: 0,
-        __v: 0
+        likes: 0
     }
 
     await api.post('/api/blogs').send(blogObject).expect(201).expect('Content-Type', /application\/json/)
@@ -70,6 +66,29 @@ test('valid post', async () =>{
     expect(response.body).toHaveLength(initialBlogs.length+1)
     expect(contents).toContain('TDD harms architecture')
 
+})
+
+test('missing likes property', async ()=>{
+    const blogObject ={
+        title: "test like",
+        author: "Ajay Dangi",
+        url: "http://localhost:3001"
+    }
+
+    await api.post('/api/blogs').send(blogObject).expect(201).expect('Content-Type', /application\/json/)
+    const response = await api.get('/api/blogs')
+    const content = response.body.filter(r => r.title === 'test like')
+    expect(content[0].likes).toBe(0)
+
+})
+
+test('missing url or title', async ()=>{
+    const blogObject ={
+        title: "test missing url or title",
+        author: "Abhay Dangi"
+    }
+
+    await api.post('/api/blogs').send(blogObject).expect(400)
 })
 
 afterAll( async () =>{
