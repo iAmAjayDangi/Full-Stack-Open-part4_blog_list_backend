@@ -91,6 +91,25 @@ test('missing url or title', async ()=>{
     await api.post('/api/blogs').send(blogObject).expect(400)
 })
 
+test('delete blog post', async() =>{
+    const response = await api.get('/api/blogs')
+    await api.delete(`/api/blogs/${response.body[0].id}`).expect(204)
+    const newResponse = await api.get('/api/blogs')
+    expect(newResponse.body).toHaveLength(initialBlogs.length-1)
+})
+
+test('update blog', async() =>{
+    const response = await api.get('/api/blogs')
+
+    const blogObject = response.body[0]
+    blogObject.likes = 10
+
+    await api.put(`/api/blogs/${blogObject.id}`).send(blogObject)
+
+    const newResponse = await api.get('/api/blogs')
+    expect(newResponse.body[0].likes).toBe(blogObject.likes)
+})
+
 afterAll( async () =>{
     await mongoose.connection.close()
 })
