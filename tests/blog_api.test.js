@@ -2,6 +2,7 @@ const mongoose = require('mongoose')
 const supertest = require('supertest')
 const app = require('../app')
 const Blog = require('../models/blog')
+const User = require('../models/user')
 
 const api = supertest(app)
 
@@ -26,14 +27,24 @@ const initialBlogs = [
     }
 ]
 
+const initialUser = {
+    username: "ajay1",
+    name: "Ajay",
+    password: "akd1234"
+}
+
+beforeAll(async () =>{
+    await api.post('/api/users').send(initialUser)
+})
+
+
 beforeEach(async () =>{
     await Blog.deleteMany()
-    let blogObject = new Blog(initialBlogs[0])
-    await blogObject.save()
-    blogObject = new Blog(initialBlogs[1])
-    await blogObject.save()
-    blogObject = new Blog(initialBlogs[2])
-    await blogObject.save()
+    const loginResponse = await api.post('/api/login').send({username: "ajay1", password: "akd1234"})
+    const token = "bearer " + loginResponse._body.token
+    await api.post('/api/blogs').send(initialBlogs[0]).set({Authorization: token})
+    await api.post('/api/blogs').send(initialBlogs[1]).set({Authorization: token})
+    await api.post('/api/blogs').send(initialBlogs[2]).set({Authorization: token})
 })
 
 test('blogs are returned as json', async ()=>{
@@ -50,7 +61,13 @@ test('unique identifier propery', async () =>{
     expect(response.body[0].id).toBeDefined()
 }, 100000)
 
+
+
 test('valid post', async () =>{
+
+    const loginResponse = await api.post('/api/login').send({username: "ajay1", password: "akd1234"})
+    const token = "bearer " + loginResponse._body.token
+
     const blogObject = {
         title: "TDD harms architecture",
         author: "Robert C. Martin",
@@ -58,7 +75,7 @@ test('valid post', async () =>{
         likes: 0
     }
 
-    await api.post('/api/blogs').send(blogObject).expect(201).expect('Content-Type', /application\/json/)
+    await api.post('/api/blogs').send(blogObject).set({Authorization: token}).expect(201).expect('Content-Type', /application\/json/)
 
     const response = await api.get('/api/blogs')
     const contents = response.body.map(r => r.title)
@@ -69,13 +86,17 @@ test('valid post', async () =>{
 })
 
 test('missing likes property', async ()=>{
+
+    const loginResponse = await api.post('/api/login').send({username: "ajay1", password: "akd1234"})
+    const token = "bearer " + loginResponse._body.token
+
     const blogObject ={
         title: "test like",
         author: "Ajay Dangi",
         url: "http://localhost:3001"
     }
 
-    await api.post('/api/blogs').send(blogObject).expect(201).expect('Content-Type', /application\/json/)
+    await api.post('/api/blogs').send(blogObject).set({Authorization: token}).expect(201).expect('Content-Type', /application\/json/)
     const response = await api.get('/api/blogs')
     const content = response.body.filter(r => r.title === 'test like')
     expect(content[0].likes).toBe(0)
@@ -83,17 +104,25 @@ test('missing likes property', async ()=>{
 })
 
 test('missing url or title', async ()=>{
+
+    const loginResponse = await api.post('/api/login').send({username: "ajay1", password: "akd1234"})
+    const token = "bearer " + loginResponse._body.token
+
     const blogObject ={
         title: "test missing url or title",
         author: "Abhay Dangi"
     }
 
-    await api.post('/api/blogs').send(blogObject).expect(400)
+    await api.post('/api/blogs').set({Authorization: token}).send(blogObject).expect(400)
 })
 
 test('delete blog post', async() =>{
+
+    const loginResponse = await api.post('/api/login').send({username: "ajay1", password: "akd1234"})
+    const token = "bearer " + loginResponse._body.token
+    
     const response = await api.get('/api/blogs')
-    await api.delete(`/api/blogs/${response.body[0].id}`).expect(204)
+    await api.delete(`/api/blogs/${response.body[0].id}`).set({Authorization: token}).expect(204)
     const newResponse = await api.get('/api/blogs')
     expect(newResponse.body).toHaveLength(initialBlogs.length-1)
 })

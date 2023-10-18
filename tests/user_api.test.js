@@ -8,13 +8,14 @@ const api = supertest(app)
 const initialUser = {
     username: "ajay",
     name: "Ajay Dangi",
-    passwordHash: "akd1234"
+    password: "akd1234"
 }
 
 beforeEach(async ()=>{
     await User.deleteMany()
-    let userObject = new User(initialUser)
-    await userObject.save()
+    // let userObject = new User(initialUser)
+    // await userObject.save()
+    await api.post('/api/users').send(initialUser)
 })
 
 test('unique user not created', async ()=>{
